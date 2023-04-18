@@ -258,16 +258,12 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     root = DecisionNode(data, chi=chi, max_depth=max_depth,
                         gain_ratio=gain_ratio)
     q = [root]
-    iter =0
     while len(q) > 0:
-        iter+=1
-        # if(iter>5000):
-            # print("heyyyy")
-        if (q[0].depth > max_depth): 
-            q.pop(0)
-            continue
-        q[0].split(impurity_func=impurity)
-        q += q[0].children
+        if q[0].depth>=100: 
+            print()
+        if q[0].depth <= max_depth:
+            q[0].split(impurity_func=impurity)
+            q += q[0].children
         q.pop(0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
