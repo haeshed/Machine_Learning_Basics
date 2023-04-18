@@ -210,12 +210,14 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
+        if impurity_func(self.data) == 0:
+            return
         temp_groups = {}
         temp_goodness = 0.0
         groups = {}
         goodness = -1.0
         attribute = 0
-        size_att=self.data.shape[1]-1
+        size_att = self.data.shape[1]-1
         for curr_attribute in range(size_att):
             temp_goodness, temp_groups = goodness_of_split(self.data, curr_attribute, impurity_func)
             if temp_goodness > goodness:
@@ -227,7 +229,8 @@ class DecisionNode:
             self.add_child(DecisionNode(groups[value], depth=self.depth+1), value)
 
         # leaves???
-
+        # repeating attributes??
+        # gain ratio?
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -252,7 +255,20 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    root = DecisionNode(data, chi=chi, max_depth=max_depth,
+                        gain_ratio=gain_ratio)
+    q = [root]
+    iter =0
+    while len(q) > 0:
+        iter+=1
+        # if(iter>5000):
+            # print("heyyyy")
+        if (q[0].depth > max_depth): 
+            q.pop(0)
+            continue
+        q[0].split(impurity_func=impurity)
+        q += q[0].children
+        q.pop(0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
