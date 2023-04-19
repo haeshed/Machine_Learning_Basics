@@ -219,14 +219,16 @@ class DecisionNode:
         attribute = 0
         size_att = self.data.shape[1]-1
         for curr_attribute in range(size_att):
-            temp_goodness, temp_groups = goodness_of_split(self.data, curr_attribute, impurity_func)
+            temp_goodness, temp_groups = goodness_of_split(
+                self.data, curr_attribute, impurity_func)
             if temp_goodness > goodness:
                 goodness = temp_goodness
                 groups = temp_groups
                 attribute = curr_attribute
         self.feature = attribute
         for value in groups:
-            self.add_child(DecisionNode(groups[value], depth=self.depth+1), value)
+            self.add_child(DecisionNode(
+                groups[value], depth=self.depth+1), value)
 
         # leaves???
         # repeating attributes??
@@ -259,12 +261,14 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
                         gain_ratio=gain_ratio)
     q = [root]
     while len(q) > 0:
-        if q[0].depth>=100: 
-            print()
-        if q[0].depth <= max_depth:
-            q[0].split(impurity_func=impurity)
-            q += q[0].children
-        q.pop(0)
+        parent = q.pop(0)
+        if parent.depth > max_depth: continue
+        parent.split(impurity_func=impurity)
+        if len(parent.children) > 0:
+            if parent.children[0].feature == parent.feature:
+                parent.children = []
+        q += parent.children
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
