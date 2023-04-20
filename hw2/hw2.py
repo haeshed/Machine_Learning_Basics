@@ -180,9 +180,12 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        reg = np.unique(self.data[:, 0], return_counts=True)
-        max_index = np.argmax(reg[1])
-        pred = reg[0][max_index]
+        # reg = np.unique(self.data[:, 0], return_counts=True)
+        # max_index = np.argmax(reg[1])
+        # pred = reg[0][max_index]
+        u, c = np.unique(self.data[:, -1], return_counts=True)
+        pred = u[c == c.max()][0]
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -265,14 +268,17 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     q = [root]
     while len(q) > 0:
         curr_node = q.pop(0)
-        if curr_node.depth >= max_depth: continue
+        if curr_node.depth >= max_depth:
+            curr_node.terminal = True
+            continue
         curr_node.split(impurity_func=impurity)
         if curr_node != root:
-            if curr_node.feature == curr_node.parent.feature: 
+            if curr_node.feature == curr_node.parent.feature:
+                curr_node.terminal = True
                 curr_node.parent.children = []
                 pass
         q += curr_node.children
-        
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -294,10 +300,16 @@ def predict(root, instance):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    pred = root.calc_node_pred()
+    if not root.terminal:
+        value = instance[root.feature]
+        if value in root.children_values:
+            index = root.children_values.index(value)
+            root = root.children[index]
+            pred = predict(root, instance)
+        ###########################################################################
+        #                             END OF YOUR CODE                            #
+        ###########################################################################
     return pred
 
 
@@ -311,11 +323,15 @@ def calc_accuracy(node, dataset):
 
     Output: the accuracy of the decision tree on the given dataset (%).
     """
-    accuracy = 0
+    accuracy = 0.0
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    accurate_pred = 0
+    for inst in dataset:
+        if predict(node, inst) == inst[-1]:
+            accurate_pred += 1
+    accuracy = 100*accurate_pred/len(dataset)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
