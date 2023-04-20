@@ -300,7 +300,7 @@ def predict(root, instance):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pred = root.calc_node_pred()
+    pred = root.pred
     if not len(root.children):
         value = instance[root.feature]
         if value in root.children_values:
