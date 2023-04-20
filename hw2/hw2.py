@@ -164,6 +164,7 @@ class DecisionNode:
         self.children = []  # array that holds this nodes children
         self.children_values = []
         self.terminal = False  # determines if the node is a leaf
+        self.parent = None
         self.chi = chi
         self.max_depth = max_depth  # the maximum allowed depth of the tree
         self.gain_ratio = gain_ratio
@@ -194,6 +195,8 @@ class DecisionNode:
         This function has no return value
         """
         self.children.append(node)
+        node.parent = self
+        node.depth = self.depth+1
         self.children_values.append(val)
 
     def split(self, impurity_func):
@@ -228,7 +231,7 @@ class DecisionNode:
         self.feature = attribute
         for value in groups:
             self.add_child(DecisionNode(
-                groups[value], depth=self.depth+1), value)
+                groups[value]), value)
 
         # leaves???
         # repeating attributes??
@@ -261,14 +264,15 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
                         gain_ratio=gain_ratio)
     q = [root]
     while len(q) > 0:
-        parent = q.pop(0)
-        if parent.depth > max_depth: continue
-        parent.split(impurity_func=impurity)
-        if len(parent.children) > 0:
-            if parent.children[0].feature == parent.feature:
-                parent.children = []
-        q += parent.children
-
+        curr_node = q.pop(0)
+        if curr_node.depth >= max_depth: continue
+        curr_node.split(impurity_func=impurity)
+        if curr_node != root:
+            if curr_node.feature == curr_node.parent.feature: 
+                curr_node.parent.children = []
+                pass
+        q += curr_node.children
+        
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
