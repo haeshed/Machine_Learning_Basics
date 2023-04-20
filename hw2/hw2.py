@@ -301,7 +301,7 @@ def predict(root, instance):
     # TODO: Implement the function.                                           #
     ###########################################################################
     pred = root.calc_node_pred()
-    if not root.terminal:
+    if not len(root.children):
         value = instance[root.feature]
         if value in root.children_values:
             index = root.children_values.index(value)
@@ -332,6 +332,10 @@ def calc_accuracy(node, dataset):
         if predict(node, inst) == inst[-1]:
             accurate_pred += 1
     accuracy = 100*accurate_pred/len(dataset)
+    print(accurate_pred)
+    print(len(dataset))
+    print(accuracy)
+    print
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
