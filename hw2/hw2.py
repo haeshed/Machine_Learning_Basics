@@ -168,6 +168,7 @@ class DecisionNode:
         self.parent = None
         self.chi = chi
         self.max_depth = max_depth  # the maximum allowed depth of the tree
+        self.deepest = 0
         self.gain_ratio = gain_ratio
 
     def calc_node_pred(self):
@@ -291,6 +292,12 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return root
+
+
+def calc_node_depth(node):
+    if node.parent != None:
+        node.deepest = max(node.deepest)
+    else:
 
 
 def predict(root, instance):
