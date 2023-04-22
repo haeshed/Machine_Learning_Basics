@@ -101,7 +101,7 @@ def calc_entropy(data):
     ###########################################################################
     pi = np.unique(data[:, -1], return_counts=True)[1]
     pi = pi/len(data)
-    logz = np.log(pi)
+    logz = np.log2(pi)
     entropy = -np.dot(logz, pi)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -315,37 +315,6 @@ def predict(root, instance):
     return pred
 
 
-def predict2(node, instance):
-    """
-    Predict a given instance using the decision tree
-
-    Input:
-    - root: the root of the decision tree.
-    - instance: an row vector from the dataset. Note that the last element 
-                of this vector is the label of the instance.
-
-    Output: the prediction of the instance.
-    """
-    pred = None
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
-    child_exist = True
-    while ((node.feature != instance.shape[0]+1) and (child_exist)):
-        child_exist = False
-        for child in node.children:
-            if (instance[node.feature] == child.value):
-                node = child
-                pred = child.pred
-                child_exist = True
-                break  # child if found, can exit the for loop
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-    return pred
-
-
 def calc_accuracy(node, dataset):
     """
     Predict a given dataset using the decision tree and calculate the accuracy
@@ -393,7 +362,9 @@ def depth_pruning(X_train, X_test):
     # TODO: Implement the function.                                           #
     ###########################################################################
     for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-        pass
+        tree=build_tree(X_train,calc_entropy,max_depth=max_depth, gain_ratio=True)
+        training.append(calc_accuracy(tree,X_train))
+        testing.append(calc_accuracy(tree,X_test))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
