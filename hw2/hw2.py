@@ -101,7 +101,7 @@ def calc_entropy(data):
     ###########################################################################
     pi = np.unique(data[:, -1], return_counts=True)[1]
     pi = pi/len(data)
-    logz = np.log2(pi)
+    logz = np.log(pi)
     entropy = -np.dot(logz, pi)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -234,8 +234,7 @@ class DecisionNode:
                 attribute = curr_attribute
         self.feature = attribute
         for value in groups:
-            self.add_child(DecisionNode(
-                groups[value]), value)
+            self.add_child(DecisionNode(groups[value]), value)
 
         # leaves???
         # repeating attributes??
@@ -244,6 +243,11 @@ class DecisionNode:
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
+
+    def prune(self):
+        self.terminal = True
+        self.children = []
+        self.children_values = []
 
 
 def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
@@ -275,10 +279,12 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
         curr_node.split(impurity_func=impurity, gain_ratio=gain_ratio)
         if curr_node != root:
             if curr_node.feature == curr_node.parent.feature:
-                curr_node.parent.terminal = True
-                curr_node.parent.children = []
-                curr_node.parent.children_values = []
+                curr_node.parent.prune()
                 continue
+        deg_of_freedom = len(curr_node.children)-1
+        if deg_of_freedom > 0 and chi < 1:
+            if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
+                curr_node.parent.prune()
         q += curr_node.children
 
     ###########################################################################
@@ -362,13 +368,27 @@ def depth_pruning(X_train, X_test):
     # TODO: Implement the function.                                           #
     ###########################################################################
     for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-        tree=build_tree(X_train,calc_entropy,max_depth=max_depth, gain_ratio=True)
-        training.append(calc_accuracy(tree,X_train))
-        testing.append(calc_accuracy(tree,X_test))
+        tree = build_tree(X_train, calc_entropy,
+                          max_depth=max_depth, gain_ratio=True)
+        training.append(calc_accuracy(tree, X_train))
+        testing.append(calc_accuracy(tree, X_test))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return training, testing
+
+
+def calc_chi(node):
+    chi_squared = 0.0
+    P_Y = np.unique(node.data[:, -1], return_counts=True)[1]
+    P_Y = P_Y / len(node.data)
+    for val in node.children_values:
+        f_data = node.data[node.data[:, node.feature] == val]
+        D_f = len(f_data)
+        p_f = np.unique(f_data[:, -1], return_counts=True)[1]
+        E = D_f*P_Y
+        chi_squared += np.sum(np.divide(np.square(p_f-E), E))
+    return chi_squared
 
 
 def chi_pruning(X_train, X_test):
@@ -392,7 +412,10 @@ def chi_pruning(X_train, X_test):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    for chi_val in chi_table:
+        tree = build_tree(X_train, calc_entropy, chi=chi_val, gain_ratio=True)
+        chi_training_acc.append(calc_accuracy(tree, X_train))
+        chi_testing_acc.append(calc_accuracy(tree, X_test))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
