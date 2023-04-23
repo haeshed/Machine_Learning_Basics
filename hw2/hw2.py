@@ -219,6 +219,7 @@ class DecisionNode:
         # TODO: Implement the function.                                           #
         ###########################################################################
         if impurity_func(self.data) == 0:
+            self.prune()
             return
         temp_groups = {}
         temp_goodness = 0.0
@@ -227,8 +228,7 @@ class DecisionNode:
         attribute = 0
         size_att = self.data.shape[1]-1
         for curr_attribute in range(size_att):
-            temp_goodness, temp_groups = goodness_of_split(
-                self.data, curr_attribute, impurity_func, gain_ratio)
+            temp_goodness, temp_groups = goodness_of_split(self.data, curr_attribute, impurity_func, gain_ratio)
             if temp_goodness > goodness:
                 goodness = temp_goodness
                 groups = temp_groups
@@ -249,7 +249,14 @@ class DecisionNode:
         self.terminal = True
         self.children = []
         self.children_values = []
+        self.deepest = 0
+        perc_up_branch_depth(self)
 
+def perc_up_branch_depth(node):
+    if node.parent != None:
+        if max(node.deepest + 1, node.parent.deepest) != node.parent.deepest:
+            node.parent.deepest = node.deepest + 1
+            perc_up_branch_depth(node.parent)
 
 def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     """
@@ -275,7 +282,7 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     while len(q) > 0:
         curr_node = q.pop(0)
         if curr_node.depth >= max_depth:
-            curr_node.terminal = True
+            curr_node.parent.prune()
             continue
         curr_node.split(impurity_func=impurity, gain_ratio=gain_ratio)
         if curr_node != root:
@@ -292,12 +299,6 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return root
-
-
-def calc_node_depth(node):
-    if node.parent != None:
-        node.deepest = max(node.deepest)
-    else:
 
 
 def predict(root, instance):
