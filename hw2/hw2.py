@@ -168,7 +168,7 @@ class DecisionNode:
         self.parent = None
         self.chi = chi
         self.max_depth = max_depth  # the maximum allowed depth of the tree
-        self.deepest = 0
+        # self.deepest = 0
         self.gain_ratio = gain_ratio
 
     def calc_node_pred(self):
@@ -204,7 +204,7 @@ class DecisionNode:
         node.depth = self.depth+1
         self.children_values.append(val)
 
-    def split(self, impurity_func, gain_ratio=False):
+    def split(self, impurity_func):
         """
         Splits the current node according to the impurity_func. This function finds
         the best feature to split according to and create the corresponding children.
@@ -228,14 +228,15 @@ class DecisionNode:
         attribute = 0
         size_att = self.data.shape[1]-1
         for curr_attribute in range(size_att):
-            temp_goodness, temp_groups = goodness_of_split(self.data, curr_attribute, impurity_func, gain_ratio)
+            temp_goodness, temp_groups = goodness_of_split(
+                self.data, curr_attribute, impurity_func, self.gain_ratio)
             if temp_goodness > goodness:
                 goodness = temp_goodness
                 groups = temp_groups
                 attribute = curr_attribute
         self.feature = attribute
         for value in groups:
-            self.add_child(DecisionNode(groups[value]), value)
+            self.add_child(DecisionNode(groups[value], gain_ratio=self.gain_ratio), value)
 
         # leaves???
         # repeating attributes??
@@ -245,18 +246,27 @@ class DecisionNode:
         #                             END OF YOUR CODE                            #
         ###########################################################################
 
+    def max_depth_method(self):
+            if not self.children:
+                return 0
+            else:
+                return 1 + max(child.max_depth_method() for child in self.children)
+
+
     def prune(self):
         self.terminal = True
         self.children = []
         self.children_values = []
-        self.deepest = 0
-        perc_up_branch_depth(self)
+        # self.deepest = 0
+        # perc_up_branch_depth(self)
 
-def perc_up_branch_depth(node):
-    if node.parent != None:
-        if max(node.deepest + 1, node.parent.deepest) != node.parent.deepest:
-            node.parent.deepest = node.deepest + 1
-            perc_up_branch_depth(node.parent)
+
+# def perc_up_branch_depth(node):
+#     if node.parent != None:
+#         if max(node.deepest + 1, node.parent.deepest) != node.parent.deepest:
+#             node.parent.deepest = node.deepest + 1
+#             perc_up_branch_depth(node.parent)
+
 
 def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     """
@@ -283,16 +293,18 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
         curr_node = q.pop(0)
         if curr_node.depth >= max_depth:
             curr_node.parent.prune()
+            # del curr_node
             continue
-        curr_node.split(impurity_func=impurity, gain_ratio=gain_ratio)
+        curr_node.split(impurity_func=impurity)
         if curr_node != root:
             if curr_node.feature == curr_node.parent.feature:
                 curr_node.parent.prune()
                 continue
-        deg_of_freedom = len(curr_node.children)-1
-        if deg_of_freedom > 0 and chi < 1:
-            if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
-                curr_node.parent.prune()
+            deg_of_freedom = len(curr_node.children)-1
+            if deg_of_freedom > 0 and chi < 1:
+                if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
+                    curr_node.parent.prune()
+                    continue
         q += curr_node.children
 
     ###########################################################################
@@ -417,17 +429,25 @@ def chi_pruning(X_train, X_test):
     chi_training_acc = []
     chi_testing_acc = []
     depth = []
+    tree = []
+    index =0
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    for chi_val in chi_table:
-        tree = build_tree(X_train, calc_entropy, chi=chi_val, gain_ratio=True)
-        chi_training_acc.append(calc_accuracy(tree, X_train))
-        chi_testing_acc.append(calc_accuracy(tree, X_test))
+    for chi_val in [1, 0.5, 0.25, 0.1, 0.05, 0.0001]:
+        tree.append(build_tree(X_train, calc_entropy, chi=chi_val, gain_ratio=True))
+        print("tree index:  ", index)
+        # print_tree(tree[index])
+        # print("root deepest:  ",tree[index].deepest)
+        print("\n")
+        chi_training_acc.append(calc_accuracy(tree[index], X_train))
+        chi_testing_acc.append(calc_accuracy(tree[index], X_test))
+        depth.append(tree[index].max_depth_method)
+        index +=1
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    return chi_training_acc, chi_testing_acc, depth
+    return chi_training_acc, chi_testing_acc, depth, tree
 
 
 def count_nodes(node):
@@ -439,11 +459,15 @@ def count_nodes(node):
 
     Output: the number of nodes in the tree.
     """
-    n_nodes = None
+    n_nodes = 1
+    q = [node]
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    while (len(q)):
+        q += q[0].children
+        n_nodes += len(q[0].children)
+        q.pop(0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -473,8 +497,8 @@ def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
         labels, counts = np.unique(node.data[:, -1], return_counts=True)
         for l, c in zip(labels, counts):
             classes_count[l] = c
-        print('{}[X{}={}, leaf]: [{}], Depth: {}'.format(depth*'--', parent_feature, feature_val,
-                                                         classes_count, node.depth))
+        print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth*'--', parent_feature, feature_val,
+                                                                                           node.feature, node.depth, len(node.children), len(node.data)))
 
 
 def print_depth(node, depth):
