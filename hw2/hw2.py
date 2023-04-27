@@ -300,11 +300,11 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
             if curr_node.feature == curr_node.parent.feature:
                 curr_node.parent.prune()
                 continue
-            deg_of_freedom = len(curr_node.children)-1
-            if deg_of_freedom > 0 and chi < 1:
-                if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
-                    curr_node.parent.prune()
-                    continue
+        deg_of_freedom = len(curr_node.children)-1
+        if deg_of_freedom > 0 and chi < 1:
+            if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
+                curr_node.prune()
+                continue
         q += curr_node.children
 
     ###########################################################################
@@ -439,7 +439,6 @@ def chi_pruning(X_train, X_test):
         print("tree index:  ", index)
         # print_tree(tree[index])
         # print("root deepest:  ",tree[index].deepest)
-        print("\n")
         chi_training_acc.append(calc_accuracy(tree[index], X_train))
         chi_testing_acc.append(calc_accuracy(tree[index], X_test))
         depth.append(tree[index].max_depth_method)
