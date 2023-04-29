@@ -77,7 +77,7 @@ def calc_gini(data):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    square = np.square(np.unique(data[:, -1], return_counts=True)[1])
+    square = np.square(np.unique(data[:, -1], return_counts=True)[1]) # uses np.square, sum to use vercorized version
     gini = 1 - np.sum(square)/(len(data)*len(data))
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -99,7 +99,7 @@ def calc_entropy(data):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pi = np.unique(data[:, -1], return_counts=True)[1]
+    pi = np.unique(data[:, -1], return_counts=True)[1] # uses np.log, dot, sum to use vercorized version
     pi = pi/len(data)
     logz = np.log(pi)
     entropy = -np.dot(logz, pi)
@@ -108,6 +108,7 @@ def calc_entropy(data):
     ###########################################################################
     return entropy
 
+# helper function that helps to calculate the gain ratio by returning the split info of some data after split by some feature
 
 def split_information(data, feature):
     entropy = 0.0
@@ -141,12 +142,12 @@ def goodness_of_split(data, feature, impurity_func, gain_ratio=False):
     goodness = impurity_func(data)
     size = len(data)
     attribute_values = np.unique(data[:, feature])
-    for value in attribute_values:
+    for value in attribute_values: # for each feature, finds the impurity by that feature
         groups[value] = data[data[:, feature] == value]
         size_group = len(groups[value])
         impurity_group = impurity_func(groups[value])
-        goodness -= (size_group/size)*impurity_group
-    if (gain_ratio):
+        goodness -= (size_group/size)*impurity_group # goodness is updated with relation to the relative size of the group
+    if (gain_ratio): # normalization by split_info if required
         goodness = goodness/split_information(data, feature)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -165,13 +166,14 @@ class DecisionNode:
         self.children = []  # array that holds this nodes children
         self.children_values = []
         self.terminal = False  # determines if the node is a leaf
-        self.parent = None
+        self.parent = None # parent pointer field. added for helpful operations
         self.chi = chi
         self.max_depth = max_depth  # the maximum allowed depth of the tree
-        # self.deepest = 0
         self.gain_ratio = gain_ratio
 
     def calc_node_pred(self):
+        # returns the most probable *value* of the label data of some node.
+
         """
         Calculate the node prediction.
 
@@ -182,11 +184,8 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        # reg = np.unique(self.data[:, 0], return_counts=True)
-        # max_index = np.argmax(reg[1])
-        # pred = reg[0][max_index]
-        u, c = np.unique(self.data[:, -1], return_counts=True)
-        pred = u[c == c.max()][0]
+        u, c = np.unique(self.data[:, -1], return_counts=True) # np.unique counts unique values
+        pred = u[c == c.max()][0] # returns the respective value
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -194,6 +193,8 @@ class DecisionNode:
         return pred
 
     def calc_node_pred_p(self):
+        # returns the most probable value *probability* of the label data of some node.
+
         """
         Calculate the node prediction.
 
@@ -204,11 +205,8 @@ class DecisionNode:
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        # reg = np.unique(self.data[:, 0], return_counts=True)
-        # max_index = np.argmax(reg[1])
-        # pred = reg[0][max_index]
-        u, c = np.unique(self.data[:, -1], return_counts=True)
-        pred = 100*c.max()/np.sum(c)
+        u, c = np.unique(self.data[:, -1], return_counts=True) # np.unique counts unique values
+        pred = 100*c.max()/np.sum(c) # takes the max value and divides by sum of all
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -249,46 +247,34 @@ class DecisionNode:
         goodness = -1.0
         attribute = 0
         size_att = self.data.shape[1]-1
-        for curr_attribute in range(size_att):
-            temp_goodness, temp_groups = goodness_of_split(
-                self.data, curr_attribute, impurity_func, self.gain_ratio)
-            if temp_goodness > goodness:
+        for curr_attribute in range(size_att): # loop over all features
+            temp_goodness, temp_groups = goodness_of_split( # check for current feature goodness
+                self.data, curr_attribute, impurity_func, self.gain_ratio) 
+            if temp_goodness > goodness: # if greater than previous max, replace by current feature
                 goodness = temp_goodness
                 groups = temp_groups
                 attribute = curr_attribute
         self.feature = attribute
-        for value in groups:
+        for value in groups: # creates child for each value of feature of split
             self.add_child(DecisionNode(
                 groups[value], gain_ratio=self.gain_ratio), value)
-
-        # leaves???
-        # repeating attributes??
-        # gain ratio??
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
-
+    
+    # helper function, runs over all nodes and returns the maximum
     def max_depth_method(self):
         if not self.children:
             return 0
         else:
             return 1 + max(child.max_depth_method() for child in self.children)
 
+    # helper function to prune some node (turn into leaf)
     def prune(self):
         self.terminal = True
         self.children = []
         self.children_values = []
-        # self.deepest = 0
-        # perc_up_branch_depth(self)
-
-
-# def perc_up_branch_depth(node):
-#     if node.parent != None:
-#         if max(node.deepest + 1, node.parent.deepest) != node.parent.deepest:
-#             node.parent.deepest = node.deepest + 1
-#             perc_up_branch_depth(node.parent)
-
 
 def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     """
@@ -310,24 +296,24 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     ###########################################################################
     root = DecisionNode(data, chi=chi, max_depth=max_depth,
                         gain_ratio=gain_ratio)
-    q = [root]
+    q = [root] # init the queue
     while len(q) > 0:
-        curr_node = q.pop(0)
-        if curr_node.depth >= max_depth:
+        curr_node = q.pop(0) # pops first in queue
+        if curr_node.depth >= max_depth: # checks for max_depth
             curr_node.parent.prune()
             # del curr_node
             continue
-        curr_node.split(impurity_func=impurity)
+        curr_node.split(impurity_func=impurity) # splits the node
         if curr_node != root:
-            if curr_node.feature == curr_node.parent.feature:
+            if curr_node.feature == curr_node.parent.feature: # if redundant split, prune
                 curr_node.parent.prune()
                 continue
         deg_of_freedom = len(curr_node.children)-1
-        if deg_of_freedom > 0 and chi < 1:
-            if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]):
+        if deg_of_freedom > 0 and chi < 1: # checks for chi
+            if (calc_chi(curr_node) < chi_table[deg_of_freedom][chi]): # check if the chi after split is high enough, else prune
                 curr_node.prune()
                 continue
-        q += curr_node.children
+        q += curr_node.children # adds children to queue
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -351,12 +337,12 @@ def predict(root, instance):
     # TODO: Implement the function.                                           #
     ###########################################################################
     pred = root.pred
-    if len(root.children) > 0:
+    if len(root.children) > 0: # checks if leaf
         value = instance[root.feature]
         if value in root.children_values:
-            index = root.children_values.index(value)
+            index = root.children_values.index(value) # checks for value of instance according to current node's main feature
             root = root.children[index]
-            pred = predict(root, instance)
+            pred = predict(root, instance) # delves deeper to next node
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -378,14 +364,11 @@ def calc_accuracy(node, dataset):
     # TODO: Implement the function.                                           #
     ###########################################################################
     accurate_pred = 0
-    for inst in dataset:
+    for inst in dataset: # loop over every instance, if accuracy is good, adds +1 to score
         if predict(node, inst) == inst[-1]:
             accurate_pred += 1
-    accuracy = 100*accurate_pred/len(dataset)
-    # print(accurate_pred)
-    # print(len(dataset))
-    # print(accuracy)
-    # print
+    accuracy = 100*accurate_pred/len(dataset) # returns score / total
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -409,7 +392,7 @@ def depth_pruning(X_train, X_test):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+    for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]: # loops over each depth, builds a new tree and adds the scores to the lists
         tree = build_tree(X_train, calc_entropy,
                           max_depth=max_depth, gain_ratio=True)
         training.append(calc_accuracy(tree, X_train))
@@ -423,13 +406,13 @@ def depth_pruning(X_train, X_test):
 def calc_chi(node):
     chi_squared = 0.0
     P_Y = np.unique(node.data[:, -1], return_counts=True)[1]
-    P_Y = P_Y / len(node.data)
-    for val in node.children_values:
-        f_data = node.data[node.data[:, node.feature] == val]
-        D_f = len(f_data)
-        p_f = np.unique(f_data[:, -1], return_counts=True)[1]
+    P_Y = P_Y / len(node.data) # calculates the probability for each val
+    for val in node.children_values: # loops over all values
+        f_data = node.data[node.data[:, node.feature] == val] # all instances for which Y=val & xj=f
+        D_f = len(f_data) # number of instances where xj=f
+        p_f = np.unique(f_data[:, -1], return_counts=True)[1] # count of f_data
         E = D_f*P_Y
-        chi_squared += np.sum(np.divide(np.square(p_f-E), E))
+        chi_squared += np.sum(np.divide(np.square(p_f-E), E)) # adds all relevant values calculations vectorized
     return chi_squared
 
 
@@ -456,7 +439,7 @@ def chi_pruning(X_train, X_test):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    for chi_val in [1, 0.5, 0.25, 0.1, 0.05, 0.0001]:
+    for chi_val in [1, 0.5, 0.25, 0.1, 0.05, 0.0001]: # loops over all chi values, builds corresponding tree, calculates accuracy and appends to lists
         tree.append(build_tree(X_train, calc_entropy,
                     chi=chi_val, gain_ratio=True))
         chi_training_acc.append(calc_accuracy(tree[index], X_train))
@@ -469,7 +452,7 @@ def chi_pruning(X_train, X_test):
     return chi_training_acc, chi_testing_acc, depth
 
 
-def count_nodes(node):
+def count_nodes(node): # loops over all nodes to count
     """
     Count the number of node in a given tree
 
@@ -505,7 +488,7 @@ def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
             print('[ROOT, feature=X{}, num child: {}, data len: {}, pred: {}]'.format(
                 node.feature, len(node.children), len(node.data), node.calc_node_pred()))
         else:
-            print('{}{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth,depth*'--', parent_feature, feature_val,
+            print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth*'--', parent_feature, feature_val,
                                                                                            node.feature, node.depth, len(node.children), len(node.data)))
         for i, child in enumerate(node.children):
             print_tree(child, depth+1, node.feature, node.children_values[i])
@@ -514,7 +497,7 @@ def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
         labels, counts = np.unique(node.data[:, -1], return_counts=True)
         for l, c in zip(labels, counts):
             classes_count[l] = c
-        print('{}{}[X{}={}, leaf]: [{}], Depth: {}, data len: {}, pred: {}, {:.2f}%]'.format(depth,depth*'--', parent_feature, feature_val,
+        print('{}[X{}={}, leaf]: [{}], Depth: {}, data len: {}, pred: {}, {:.1f}%]'.format(depth*'--', parent_feature, feature_val,
                                                                                   classes_count, node.depth, len(node.data), node.calc_node_pred(), node.calc_node_pred_p()))
 
 
@@ -531,36 +514,3 @@ def print_depth(node, depth):
                 print('[ROOT, feature=X{}, num child: {}, data len: {}, pred: {}]'.format(
                     q[0].feature, len(q[0].children), len(q[0].data), q[0].calc_node_pred()))
         q.pop(0)
-
-
-# you can change the function signeture
-def print_tree2(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
-    '''
-    prints the tree according to the example above
-
-    Input:
-    - node: a node in the decision tree
-
-    This function has no return value
-    '''
-    ###########################################################################
-    # TODO: Implement the function.                                           #
-    ###########################################################################
-    string = ""
-    for i in range(node.depth):
-        string += "  "
-    if node.terminal:
-        instances = node.data.shape[0]
-        print(string, "[", parent_feature, ", leaf]:")
-    else:
-        print(string, "[", parent_feature, ", feature =", node.feature, "]")
-    i = 0
-    for child in node.children:
-        temp = str(node.feature) + "=" + str(feature_val)
-        print_tree2(child, parent_feature=temp,
-                    feature_val=node.children_values[i])
-        i += 1
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-#print_tree(tree_min_samples_split,feature_val=tree_min_samples_split.feature )
