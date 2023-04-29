@@ -114,7 +114,7 @@ def split_information(data, feature):
     reg = np.unique(data[:, feature], return_counts=True)[1]
     reg = reg/len(data)
     logz = np.log2(reg)
-    entropy = -np.dot(logz, reg)
+    entropy = abs(-np.dot(logz, reg))
     return entropy
 
 
@@ -193,6 +193,28 @@ class DecisionNode:
         ###########################################################################
         return pred
 
+    def calc_node_pred_p(self):
+        """
+        Calculate the node prediction.
+
+        Returns:
+        - pred: the prediction of the node
+        """
+        pred = None
+        ###########################################################################
+        # TODO: Implement the function.                                           #
+        ###########################################################################
+        # reg = np.unique(self.data[:, 0], return_counts=True)
+        # max_index = np.argmax(reg[1])
+        # pred = reg[0][max_index]
+        u, c = np.unique(self.data[:, -1], return_counts=True)
+        pred = 100*c.max()/np.sum(c)
+
+        ###########################################################################
+        #                             END OF YOUR CODE                            #
+        ###########################################################################
+        return pred
+
     def add_child(self, node, val):
         """
         Adds a child node to self.children and updates self.children_values
@@ -236,7 +258,8 @@ class DecisionNode:
                 attribute = curr_attribute
         self.feature = attribute
         for value in groups:
-            self.add_child(DecisionNode(groups[value], gain_ratio=self.gain_ratio), value)
+            self.add_child(DecisionNode(
+                groups[value], gain_ratio=self.gain_ratio), value)
 
         # leaves???
         # repeating attributes??
@@ -247,11 +270,10 @@ class DecisionNode:
         ###########################################################################
 
     def max_depth_method(self):
-            if not self.children:
-                return 0
-            else:
-                return 1 + max(child.max_depth_method() for child in self.children)
-
+        if not self.children:
+            return 0
+        else:
+            return 1 + max(child.max_depth_method() for child in self.children)
 
     def prune(self):
         self.terminal = True
@@ -430,23 +452,21 @@ def chi_pruning(X_train, X_test):
     chi_testing_acc = []
     depth = []
     tree = []
-    index =0
+    index = 0
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
     for chi_val in [1, 0.5, 0.25, 0.1, 0.05, 0.0001]:
-        tree.append(build_tree(X_train, calc_entropy, chi=chi_val, gain_ratio=True))
-        print("tree index:  ", index)
-        # print_tree(tree[index])
-        # print("root deepest:  ",tree[index].deepest)
+        tree.append(build_tree(X_train, calc_entropy,
+                    chi=chi_val, gain_ratio=True))
         chi_training_acc.append(calc_accuracy(tree[index], X_train))
         chi_testing_acc.append(calc_accuracy(tree[index], X_test))
         depth.append(tree[index].max_depth_method)
-        index +=1
+        index += 1
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    return chi_training_acc, chi_testing_acc, depth, tree
+    return chi_training_acc, chi_testing_acc, depth
 
 
 def count_nodes(node):
@@ -476,10 +496,8 @@ def count_nodes(node):
 def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
     '''
     prints the tree according to the example above
-
     Input:
     - node: a node in the decision tree
-
     This function has no return value
     '''
     if node.terminal == False:
@@ -487,7 +505,7 @@ def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
             print('[ROOT, feature=X{}, num child: {}, data len: {}, pred: {}]'.format(
                 node.feature, len(node.children), len(node.data), node.calc_node_pred()))
         else:
-            print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth*'--', parent_feature, feature_val,
+            print('{}{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth,depth*'--', parent_feature, feature_val,
                                                                                            node.feature, node.depth, len(node.children), len(node.data)))
         for i, child in enumerate(node.children):
             print_tree(child, depth+1, node.feature, node.children_values[i])
@@ -496,8 +514,8 @@ def print_tree(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
         labels, counts = np.unique(node.data[:, -1], return_counts=True)
         for l, c in zip(labels, counts):
             classes_count[l] = c
-        print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(depth*'--', parent_feature, feature_val,
-                                                                                           node.feature, node.depth, len(node.children), len(node.data)))
+        print('{}{}[X{}={}, leaf]: [{}], Depth: {}, data len: {}, pred: {}, {:.2f}%]'.format(depth,depth*'--', parent_feature, feature_val,
+                                                                                  classes_count, node.depth, len(node.data), node.calc_node_pred(), node.calc_node_pred_p()))
 
 
 def print_depth(node, depth):
@@ -507,9 +525,42 @@ def print_depth(node, depth):
             q += q[0].children
         elif q[0].depth == depth:
             if depth != 0:
-                print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}'.format(
-                    depth*'--', q[0].parent.feature, q[0].feature, q[0].feature, q[0].depth, len(q[0].children), len(q[0].data)))
+                print('{}[X{}={}, feature=X{}], Depth: {}, num child: {}, data len: {}, pred: {}, {:.2f}%'.format(
+                    depth*'--', q[0].parent.feature, q[0].feature, q[0].feature, q[0].depth, len(q[0].children), len(q[0].data), q[0].calc_node_pred(), q[0].calc_node_pred_p()))
             else:
                 print('[ROOT, feature=X{}, num child: {}, data len: {}, pred: {}]'.format(
                     q[0].feature, len(q[0].children), len(q[0].data), q[0].calc_node_pred()))
         q.pop(0)
+
+
+# you can change the function signeture
+def print_tree2(node, depth=0, parent_feature='ROOT', feature_val='ROOT'):
+    '''
+    prints the tree according to the example above
+
+    Input:
+    - node: a node in the decision tree
+
+    This function has no return value
+    '''
+    ###########################################################################
+    # TODO: Implement the function.                                           #
+    ###########################################################################
+    string = ""
+    for i in range(node.depth):
+        string += "  "
+    if node.terminal:
+        instances = node.data.shape[0]
+        print(string, "[", parent_feature, ", leaf]:")
+    else:
+        print(string, "[", parent_feature, ", feature =", node.feature, "]")
+    i = 0
+    for child in node.children:
+        temp = str(node.feature) + "=" + str(feature_val)
+        print_tree2(child, parent_feature=temp,
+                    feature_val=node.children_values[i])
+        i += 1
+    ###########################################################################
+    #                             END OF YOUR CODE                            #
+    ###########################################################################
+#print_tree(tree_min_samples_split,feature_val=tree_min_samples_split.feature )
