@@ -461,7 +461,7 @@ def chi_pruning(X_train, X_test):
                     chi=chi_val, gain_ratio=True))
         chi_training_acc.append(calc_accuracy(tree[index], X_train))
         chi_testing_acc.append(calc_accuracy(tree[index], X_test))
-        depth.append(tree[index].max_depth_method)
+        depth.append(tree[index].max_depth_method())
         index += 1
     ###########################################################################
     #                             END OF YOUR CODE                            #
