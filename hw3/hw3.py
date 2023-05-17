@@ -198,8 +198,10 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         self.dataset = dataset
         self.class_value = class_value
-        mean = np.mean(self.dataset)
-        std = np.std(self.dataset)
+        self.class_set = dataset[dataset[:, -1] == class_value][:, :-1]
+        self.mean = np.mean(self.class_set, axis=0)
+        self.std = np.std(self.class_set, axis=0)
+        self.cov_matrix = np.cov(self.class_set)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -212,7 +214,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        prior = self.class_set.shape[0] / self.dataset.shape[0]
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -226,7 +228,8 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        likelihood = normal_pdf(x, self.mean, self.std)
+        likelihood = np.prod(likelihood)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -241,7 +244,7 @@ class NaiveNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        posterior = self.get_instance_likelihood(x) * self.get_prior()
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -266,7 +269,8 @@ class MAPClassifier():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -280,11 +284,12 @@ class MAPClassifier():
         Output
             - 0 if the posterior probability of class 0 is higher and 1 otherwise.
         """
-        pred = None
+        pred = 1
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if (self.ccd0.get_instance_posterior(x) > self.ccd1.get_instance_posterior(x)):
+            pred = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -302,11 +307,14 @@ def compute_accuracy(test_set, map_classifier):
     Ouput
         - Accuracy = #Correctly Classified / test_set size
     """
-    acc = None
+    acc = 0
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    for i in test_set:
+        if map_classifier.predict(i) == i[::, -1]:
+            acc = acc+1
+    acc = acc/test_set.shape[0]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
