@@ -201,7 +201,6 @@ class NaiveNormalClassDistribution():
         self.class_set = dataset[dataset[:, -1] == class_value][:, :-1]
         self.mean = np.mean(self.class_set, axis=0)
         self.std = np.std(self.class_set, axis=0)
-        self.cov_matrix = np.cov(self.class_set)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -312,7 +311,7 @@ def compute_accuracy(test_set, map_classifier):
     # TODO: Implement the function.                                           #
     ###########################################################################
     for i in test_set:
-        if map_classifier.predict(i) == i[::, -1]:
+        if map_classifier.predict(i[:-1]) == i[-1]:
             acc = acc+1
     acc = acc/test_set.shape[0]
     ###########################################################################
@@ -336,7 +335,10 @@ def multi_normal_pdf(x, mean, cov):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    dim = len(cov)
+    exponent = np.exp((x-mean).T @ np.linalg.inv(cov) @ (x-mean))
+    constants = np.power(2 * np.pi, dim) * np.linalg.det(cov)
+    pdf = 1 / np.sqrt(constants * exponent)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -357,7 +359,11 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.dataset = dataset
+        self.class_value = class_value
+        self.class_set = dataset[dataset[:, -1] == class_value][:, :-1]
+        self.mean = np.mean(self.class_set, axis=0)
+        self.cov_matrix = np.cov(self.class_set.T)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -370,7 +376,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        prior = self.class_set.shape[0] / self.dataset.shape[0]
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -384,7 +390,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        likelihood = multi_normal_pdf(x, self.mean, self.cov_matrix)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -399,7 +405,7 @@ class MultiNormalClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        posterior = self.get_prior() * self.get_instance_likelihood(x)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
