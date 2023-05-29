@@ -299,7 +299,7 @@ def build_tree(data, impurity, gain_ratio=False, chi=1, max_depth=1000):
     q = [root] # init the queue
     while len(q) > 0:
         curr_node = q.pop(0) # pops first in queue
-        if curr_node.depth >= max_depth: # checks for max_depth
+        if curr_node.depth >= max_depth-1: # checks for max_depth
             curr_node.parent.prune()
             # del curr_node
             continue

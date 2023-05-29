@@ -336,8 +336,9 @@ def multi_normal_pdf(x, mean, cov):
     # TODO: Implement the function.                                           #
     ###########################################################################
     dim = len(cov)
-    exponent = np.exp((x-mean).T @ np.linalg.inv(cov) @ (x-mean))
-    constants = np.power(2 * np.pi, dim) * np.linalg.det(cov)
+    cov_inv = np.linalg.inv(cov)
+    exponent = np.exp(np.dot(np.dot((x - mean).T, cov_inv), x - mean))
+    constants = (2 * np.pi) ** dim * np.linalg.det(cov)
     pdf = 1 / np.sqrt(constants * exponent)
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -426,7 +427,8 @@ class MaxPrior():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -440,11 +442,12 @@ class MaxPrior():
         Output
             - 0 if the posterior probability of class 0 is higher and 1 otherwise.
         """
-        pred = None
+        pred = 1
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if (self.ccd0.get_prior() > self.ccd1.get_prior()):
+            pred = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -465,7 +468,8 @@ class MaxLikelihood():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -479,11 +483,12 @@ class MaxLikelihood():
         Output
             - 0 if the posterior probability of class 0 is higher and 1 otherwise.
         """
-        pred = None
+        pred = 1
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if (self.ccd0.get_instance_likelihood(x) > self.ccd1.get_instance_likelihood(x)):
+            pred = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -507,7 +512,9 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.dataset = dataset
+        self.class_value = class_value
+        self.class_set = dataset[dataset[:, -1] == class_value][:, :-1]
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -521,7 +528,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        prior = self.class_set.shape[0] / self.dataset.shape[0]
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -536,7 +543,16 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        class_set = self.class_set
+        feature_prob = []
+        for feature_idx in range(self.dataset.shape[1] - 1):
+            feature_uniq_vals = np.unique(self.dataset[:, feature_idx])
+            if x[feature_idx] in feature_uniq_vals:
+                n_ij = len(class_set[class_set[:, feature_idx] == x[feature_idx]])
+                feature_prob.append((n_ij + 1) / (len(class_set) + len(feature_uniq_vals)))
+            else:
+                feature_prob.append(EPSILLON)
+        likelihood = np.prod(np.array(feature_prob))
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -552,7 +568,7 @@ class DiscreteNBClassDistribution():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        posterior = self.get_instance_likelihood(x) * self.get_prior()
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -573,7 +589,8 @@ class MAPClassifier_DNB():
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.ccd0 = ccd0
+        self.ccd1 = ccd1
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -587,11 +604,12 @@ class MAPClassifier_DNB():
         Output
             - 0 if the posterior probability of class 0 is higher and 1 otherwise.
         """
-        pred = None
+        pred = 1
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        if (self.ccd0.get_instance_posterior(x) > self.ccd1.get_instance_posterior(x)):
+            pred = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -606,11 +624,14 @@ class MAPClassifier_DNB():
         Ouput
             - Accuracy = #Correctly Classified / #test_set size
         """
-        acc = None
+        acc = 0
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        for i in test_set:
+            if self.predict(i[:-1]) == i[-1]:
+                acc = acc+1
+        acc = acc/test_set.shape[0]
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
