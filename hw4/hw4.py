@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class LogisticRegressionGD(object):
     """
     Logistic Regression Classifier using gradient descent.
@@ -30,6 +31,17 @@ class LogisticRegressionGD(object):
         self.Js = []
         self.thetas = []
 
+    def h_theta(self, X):
+        return 1 / (1 + np.exp(-X.dot(self.theta)))
+
+    def cost_func(self, X, y):
+        h_x = self.h_theta(X)
+        m = X.shape[0]
+        a = - y * np.log(h_x)
+        b = (1-y) * np.log(1 - h_x)
+        num_of_true = np.sum(a - b)
+        return num_of_true/m
+
     def fit(self, X, y):
         """
         Fit training data (the learning phase).
@@ -51,11 +63,22 @@ class LogisticRegressionGD(object):
         """
         # set random seed
         np.random.seed(self.random_state)
-
+        n = X.shape(1)
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        self.theta = np.random(n)
+
+        for i in range(self.n_iter):
+            cost = self.cost_func(X, y)
+            if i > 0 and np.abs(cost - self.Js[-1]) < self.eps:
+                break
+            self.Js.append(cost)
+            self.thetas.append(self.theta)
+            for j in range(n):
+                self.theta -= self.eta * (self.h_theta(X) - y).dot(X[:, j])
+                # check for simultanious updates???????
+
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
@@ -76,6 +99,7 @@ class LogisticRegressionGD(object):
         #                             END OF YOUR CODE                            #
         ###########################################################################
         return preds
+
 
 def cross_validation(X, y, folds, algo, random_state):
     """
@@ -115,16 +139,17 @@ def cross_validation(X, y, folds, algo, random_state):
     ###########################################################################
     return cv_accuracy
 
+
 def norm_pdf(data, mu, sigma):
     """
     Calculate normal desnity function for a given data,
     mean and standrad deviation.
- 
+
     Input:
     - x: A value we want to compute the distribution for.
     - mu: The mean value of the distribution.
     - sigma:  The standard deviation of the distribution.
- 
+
     Returns the normal distribution pdf according to the given mu and sigma for the given x.    
     """
     p = None
@@ -136,6 +161,7 @@ def norm_pdf(data, mu, sigma):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return p
+
 
 class EM(object):
     """
@@ -224,17 +250,18 @@ class EM(object):
     def get_dist_params(self):
         return self.weights, self.mus, self.sigmas
 
+
 def gmm_pdf(data, weights, mus, sigmas):
     """
     Calculate gmm desnity function for a given data,
     mean and standrad deviation.
- 
+
     Input:
     - data: A value we want to compute the distribution for.
     - weights: The weights for the GMM
     - mus: The mean values of the GMM.
     - sigmas:  The standard deviation of the GMM.
- 
+
     Returns the GMM distribution pdf according to the given mus, sigmas and weights
     for the given data.    
     """
@@ -247,6 +274,7 @@ def gmm_pdf(data, weights, mus, sigmas):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return pdf
+
 
 class NaiveBayesGaussian(object):
     """
@@ -302,6 +330,7 @@ class NaiveBayesGaussian(object):
         ###########################################################################
         return preds
 
+
 def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     ''' 
     Read the full description of this function in the notebook.
@@ -325,7 +354,7 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
     k : Number of gaussians in each dimension
     best_eta : best eta from cv
     best_eps : best eta from cv
-    ''' 
+    '''
 
     lor_train_acc = None
     lor_test_acc = None
@@ -343,6 +372,7 @@ def model_evaluation(x_train, y_train, x_test, y_test, k, best_eta, best_eps):
             'lor_test_acc': lor_test_acc,
             'bayes_train_acc': bayes_train_acc,
             'bayes_test_acc': bayes_test_acc}
+
 
 def generate_datasets():
     from scipy.stats import multivariate_normal
@@ -362,8 +392,8 @@ def generate_datasets():
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    return{'dataset_a_features': dataset_a_features,
-           'dataset_a_labels': dataset_a_labels,
-           'dataset_b_features': dataset_b_features,
-           'dataset_b_labels': dataset_b_labels
-           }
+    return {'dataset_a_features': dataset_a_features,
+            'dataset_a_labels': dataset_a_labels,
+            'dataset_b_features': dataset_b_features,
+            'dataset_b_labels': dataset_b_labels
+            }
