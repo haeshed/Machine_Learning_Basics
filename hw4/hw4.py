@@ -63,11 +63,11 @@ class LogisticRegressionGD(object):
         """
         # set random seed
         np.random.seed(self.random_state)
-        n = X.shape(1)
+        n = X.shape[1]
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        self.theta = np.random(n)
+        self.theta = np.random.random(n)
 
         for i in range(self.n_iter):
             cost = self.cost_func(X, y)
@@ -90,11 +90,12 @@ class LogisticRegressionGD(object):
         ----------
         X : {array-like}, shape = [n_examples, n_features]
         """
-        preds = None
+        preds = []
         ###########################################################################
         # TODO: Implement the function.                                           #
         ###########################################################################
-        pass
+        preds = self.h_theta(X)
+        preds = np.round(preds)
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
