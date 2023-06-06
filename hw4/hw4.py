@@ -102,6 +102,12 @@ class LogisticRegressionGD(object):
         return preds
 
 
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]
+
+
 def cross_validation(X, y, folds, algo, random_state):
     """
     This function performs cross validation as seen in class.
@@ -126,7 +132,7 @@ def cross_validation(X, y, folds, algo, random_state):
     Returns the cross validation accuracy.
     """
 
-    cv_accuracy = None
+    cv_accuracy = 0
 
     # set random seed
     np.random.seed(random_state)
@@ -134,7 +140,19 @@ def cross_validation(X, y, folds, algo, random_state):
     ###########################################################################
     # TODO: Implement the function.                                           #
     ###########################################################################
-    pass
+    acc = None
+    X_shuff, y_shuff = unison_shuffled_copies(X, y)
+    X_folds, y_folds = np.split(X_shuff, folds), np.split(y_shuff, folds)
+    X_train, X_test, y_train, y_test = None, None, None, None
+
+    for fold in range(folds):
+        X_train, X_test = np.concatenate(np.delete(X_folds, fold, axis=0)), X_folds[fold]
+        y_train, y_test = np.concatenate(np.delete(y_folds, fold, axis=0)), y_folds[fold]
+        algo.fit(X_train, y_train)
+        acc = np.sum(algo.predict(X_test) != y_test) / len(X_test)
+        cv_accuracy += acc
+
+    cv_accuracy /= folds
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
