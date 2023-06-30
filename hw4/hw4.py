@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import savetxt
 
 
 class LogisticRegressionGD(object):
@@ -39,8 +40,11 @@ class LogisticRegressionGD(object):
         m = X.shape[0]
         a = - y * np.log(h_x)
         b = (1-y) * np.log(1 - h_x)
-        num_of_true = np.sum(a - b)
-        return num_of_true/m
+        # num_of_true = np.sum(a - b)
+        cost = np.mean(a - b)
+        # return num_of_true/m
+        return cost
+
 
     def fit(self, X, y):
         """
@@ -59,7 +63,6 @@ class LogisticRegressionGD(object):
           n_features is the number of features.
         y : array-like, shape = [n_examples]
           Target values.
-
         """
         # set random seed
         np.random.seed(self.random_state)
@@ -68,16 +71,31 @@ class LogisticRegressionGD(object):
         # TODO: Implement the function.                                           #
         ###########################################################################
         self.theta = np.random.random(n)
-
+        # print("theta start= ", self.theta)
+        # print("data start= ", X)
         for i in range(self.n_iter):
             cost = self.cost_func(X, y)
             if i > 0 and np.abs(cost - self.Js[-1]) < self.eps:
                 break
             self.Js.append(cost)
             self.thetas.append(self.theta)
-            for j in range(n):
-                self.theta -= self.eta * (self.h_theta(X) - y).dot(X[:, j])
+            # print(self.Js[-1])
+            self.theta = self.theta - self.eta * np.dot(X.T, (self.h_theta(X) - y))
+        # print("ending thetas = ", self.thetas[-10:])
+        # print("ending costs = ", self.Js)
                 # check for simultanious updates???????
+        # __________________________________________________________________________________
+        # __________________________________________________________________________________
+        # np.random.seed(self.random_state)
+        # self.theta = np.random.randn(X.shape[1])
+        # # gradient descent
+        # for iteration in range(self.n_iter):
+        #     # calculate current theta cost
+        #     self.Js.append(self.cost_func(X,y))
+        #     if iteration > 0 and abs(self.Js[-1] - self.Js[-2]) < self.eps:
+        #         break
+        #     # evaluate new theta
+        #     self.theta = self.theta - (self.eta * np.dot(X.T, (self.h_theta(X) - y) ))
 
         ###########################################################################
         #                             END OF YOUR CODE                            #
@@ -95,12 +113,27 @@ class LogisticRegressionGD(object):
         # TODO: Implement the function.                                           #
         ###########################################################################
         preds = self.h_theta(X)
-        preds = np.round(preds)
+        # preds = np.round(preds)
+        preds[preds > 0.5] = 1
+        preds[preds <= 0.5] = 0
         ###########################################################################
         #                             END OF YOUR CODE                            #
         ###########################################################################
         return preds
 
+    def predict2(self, X):
+        """Return the predicted class label"""
+        # if len(X.shape) == 1:
+        #     X = np.array([X])
+        # bias trick
+        # X = np.column_stack((np.ones(X.shape[0]), X))
+        # if(len(X)<=10):print(X)
+        # theta is saved in self.theta (latest is the most updated)
+        prob = self.h_theta(X)
+        # prob is a vector with probability [0-1], need to over-ride
+        prob[prob > 0.5] = 1
+        prob[prob <= 0.5] = 0
+        return prob
 
 def unison_shuffled_copies(a, b):
     assert len(a) == len(b)
@@ -142,16 +175,26 @@ def cross_validation(X, y, folds, algo, random_state):
     ###########################################################################
     acc = None
     X_shuff, y_shuff = unison_shuffled_copies(X, y)
+
     X_folds, y_folds = np.split(X_shuff, folds), np.split(y_shuff, folds)
     X_train, X_test, y_train, y_test = None, None, None, None
+    # print(X, y)
+    # print(X_shuff, y_shuff)
+    # print(len(X_folds[0].shape))
+
 
     for fold in range(folds):
         X_train, X_test = np.concatenate(np.delete(X_folds, fold, axis=0)), X_folds[fold]
         y_train, y_test = np.concatenate(np.delete(y_folds, fold, axis=0)), y_folds[fold]
+        # print(X_train,y_train)
+        # print(X_test,y_test)
         algo.fit(X_train, y_train)
-        acc = np.sum(algo.predict(X_test) != y_test) / len(X_test)
+        # print("predict(X_test)   y_test")
+        # print(algo.predict(X_test), y_test)
+        acc = np.sum(algo.predict(X_test) == y_test) / len(X_test)
+        print("fold: ", fold, "acc: ", acc)
         cv_accuracy += acc
-
+    savetxt('data2.csv', X_train, delimiter=',')
     cv_accuracy /= folds
     ###########################################################################
     #                             END OF YOUR CODE                            #

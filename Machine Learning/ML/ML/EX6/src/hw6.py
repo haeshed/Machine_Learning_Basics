@@ -20,7 +20,7 @@ def get_random_centroids(X, k):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     # make sure you return a numpy array
-    return np.asarray(centroids).astype(np.float)
+    return np.asarray(centroids).astype(float)
 
 
 def lp_distance(X, centroids, p=2):
@@ -64,6 +64,8 @@ def kmeans_converge_centroids(X, k, p, max_iter, centroids):
             centroid_i = np.mean(X[assignment_vector], axis=0)
             next_centroids.append(centroid_i)
         centroids = np.array(next_centroids)
+        # if np.all(prev_centroids == centroids): break
+
         if np.allclose(centroids, prev_centroids, rtol=0, atol=2):  # epsilon is atol, checking elementwise
             break
     classes = assignments
