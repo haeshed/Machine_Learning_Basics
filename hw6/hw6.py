@@ -44,11 +44,6 @@ def lp_distance(X, centroids, p=2):
         distances.append(distance)
     distances = np.array(distances)
 
-    # diff = X - centroids[:, np.newaxis]
-    # abs = np.abs(diff)
-    # powered = abs ** p
-    # summed = np.sum(powered, axis=-1)
-    # distances = summed ** (1.0 / p)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -77,8 +72,8 @@ def kmeans(X, k, p ,max_iter=100):
         classes = np.argmin(distances, axis=0)
         prev_centroids = centroids
         centroids = np.array([np.mean(X[classes == i, :], axis=0) for i in range(k)])
-        if np.all(prev_centroids == centroids): break
-        # if np.allclose(centroids, prev_centroids, rtol=0, atol=2): break
+        # if np.all(prev_centroids == centroids): break # used to measure total equalness
+        if np.allclose(centroids, prev_centroids, rtol=0, atol=2): break # used to measure equalness with threshhold
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -120,8 +115,10 @@ def kmeans_pp(X, k, p ,max_iter=100):
         classes = np.argmin(distances, axis=0)
         prev_centroids = centroids
         centroids = np.array([np.mean(X[classes == i, :], axis=0) for i in range(k)])
-        if np.all(prev_centroids == centroids): break
-        # if np.allclose(centroids, prev_centroids, rtol=0, atol=2):  break
+
+        # Uncomment this for total equalness
+        # if np.all(prev_centroids == centroids): break 
+        if np.allclose(centroids, prev_centroids, rtol=0, atol=2):  break # Uncomment this for equalness by threshhold
     
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -144,3 +141,46 @@ def get_img_diff(img_org, img_comp):
     img_comp = np.array(img_comp, dtype=float)
     diff = ((img_org - img_comp)**2).mean(axis=0).mean() # we use the MSE function to measure the difference between the two images
     return diff
+
+
+def inertia(X, centroids):
+    distances = lp_distance(X, centroids, 2)
+    distances_to_closest_centroid = np.amin(distances, axis=0)
+    distance = np.sum(distances_to_closest_centroid)
+
+    return distance
+
+
+# This is an auxilary func designed to be the same but with a higher epsilon threshold
+def kmeans_aux(X, k, p, max_iter=100):
+    centroids = get_random_centroids(X, k)
+    centroids, classes = kmeans_aux_func(X, k, p, max_iter, centroids)
+    return centroids, classes
+
+
+# This is an auxilary func designed to be the same but with a higher epsilon threshold
+def kmeans_pp_aux(X, k, p, max_iter=100):
+    centroids = []
+    first_centroid = X[np.random.randint(X.shape[0])]
+    centroids.append(first_centroid)
+    for i in range(k - 1):
+        distances = lp_distance(X, centroids, 2)
+        distances_to_closest_centroid = (np.amin(distances, axis=0)) ** 2
+        probability_vector = distances_to_closest_centroid / np.sum(distances_to_closest_centroid)
+        new_centroid_index = np.random.choice(X.shape[0], p=probability_vector)
+        centroid = X[new_centroid_index]
+        centroids.append(centroid)
+
+    centroids = np.array(centroids)
+    centroids, classes = kmeans_aux_func(X, k, p, max_iter, centroids)
+    return centroids, classes
+
+# This is an auxilary func designed to be the same but with a higher epsilon threshold
+def kmeans_aux_func(X, k, p, max_iter, centroids):
+    for n in range(max_iter):
+        distances = lp_distance(X, centroids, p)
+        classes = np.argmin(distances, axis=0)
+        prev_centroids = centroids
+        centroids = np.array([np.mean(X[classes == i, :], axis=0) for i in range(k)])
+        if np.allclose(centroids, prev_centroids, rtol=0, atol=6):  break
+    return centroids, classes
